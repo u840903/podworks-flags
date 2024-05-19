@@ -1,6 +1,6 @@
 import os
 import re
-import xml.etree.ElementTree as ET
+from lxml import etree
 
 def rgb_to_grayscale(hex_color):
     # Convert hex to RGB
@@ -14,19 +14,17 @@ def rgb_to_grayscale(hex_color):
 
 def process_svg_file(file_path):
     try:
-        tree = ET.parse(file_path)
+        parser = etree.XMLParser(remove_blank_text=True)
+        tree = etree.parse(file_path, parser)
         root = tree.getroot()
 
-        # Namespace handling
-        namespaces = {'svg': 'http://www.w3.org/2000/svg'}
-
-        for elem in root.findall('.//*[@fill]', namespaces):
-            fill_color = elem.attrib['fill']
+        for elem in root.xpath('//*[@fill]'):
+            fill_color = elem.get('fill')
             if re.match(r'^#([A-Fa-f0-9]{6})$', fill_color):
                 grayscale_color = rgb_to_grayscale(fill_color)
                 elem.set('fill', grayscale_color)
 
-        tree.write(file_path, xml_declaration=True, encoding='utf-8')
+        tree.write(file_path, pretty_print=True, xml_declaration=True, encoding='utf-8')
         print(f"Processed file: {file_path}")
     except Exception as e:
         print(f"Error processing file {file_path}: {e}")
